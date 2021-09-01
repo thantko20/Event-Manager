@@ -2,6 +2,7 @@ require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
 require 'time'
+require 'date'
 #require 'pry-byebug'
 
 def clean_zipcode(zipcode)
@@ -55,22 +56,57 @@ def get_hour(time)
   time.hour.to_s
 end
 
-def store_peak_hours(hour_hash, hour)
-  hour_hash[hour] = 0 unless hour_hash[hour]
-  hour_hash[hour] += 1
+def store_targets(hash, key)
+  hash[key] = 0 unless hash[key]
+  hash[key] += 1
 end
 
 def sort_hash(hash)
   hash.sort_by {|k, v| -v}.to_h
 end
 
-def save_peak_hours(hash)
-  filename = "peak_hours.txt"
+=begin
+def save_peak_hours(hash, name)
+  filename = "#{name}.txt"
 
   File.open(filename, 'w') do |file|
     hash.each do |k, v|
       file.puts "At hour #{k} of the day, #{v} person(s) registered."
     end
+  end
+end
+=end
+
+# I have to find 'days of the week that most people registered'
+# Assignment suggests to use Date#wday method which accepts year, month, day as parameters and
+# return a number which presents day of the week(6 for sunday for exmaple)
+# So I need to extract the date
+# I'll use Date#strptime to extract the date and DateOject#wday to get the day of the week
+# So I'll have to convert the returned number to day of the week
+# Then I'll store the number of days in a hash
+# Then I'll use File.open(filename, 'w') to store data locally
+
+def get_day(time)
+  day = Date.strptime(time, '%m/%d/%y %H:%M')
+  convert_day(day.wday)
+end
+
+def convert_day(day)
+  case day
+  when 0
+    'Sunday'
+  when 1
+    'Monday'
+  when 2
+    'Tuesday'
+  when 3
+    'Wednesday'
+  when 4
+    'Thursday'
+  when 5
+    'Friday'
+  when 6
+    'Saturday'
   end
 end
 
@@ -99,6 +135,16 @@ def save_thank_you_letter(id, form_letter)
   end
 end
 
+def save_targets(targets)
+  Dir.mkdir('targets') unless Dir.exist?('targets')
+
+  filename = 'targets/target.html'
+
+  File.open(filename, 'w') do |file|
+    file.puts targets
+  end
+end
+
 puts 'Event Manager Initialized!'
 
 contents = CSV.open(
@@ -109,7 +155,11 @@ contents = CSV.open(
 
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
+
 hour_hash = Hash.new
+day_hash = Hash.new
+template_target = File.read('target.erb')
+erb_target = ERB.new template_target
 
 contents.each do |row|
   id = row[0]
@@ -118,13 +168,18 @@ contents.each do |row|
   number = clean_phone_number(row[:homephone])
   #binding.pry
   hour = get_hour(row[:regdate])
+  day = get_day(row[:regdate])
   legislators = legislators_by_zipcode(zipcode)
 
-  store_peak_hours(hour_hash, hour)
+  store_targets(hour_hash, hour)
+  store_targets(day_hash, day)
 
   form_letter = erb_template.result(binding)
 
   save_thank_you_letter(id, form_letter)
 end
 
-save_peak_hours(sort_hash(hour_hash))
+target = erb_target.result(binding)
+hour_hash = sort_hash(hour_hash)
+day_hash = sort_hash(day_hash)
+save_targets(target)
