@@ -1,6 +1,8 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'time'
+#require 'pry-byebug'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
@@ -34,6 +36,42 @@ end
 def format_number(number)
   [3, 7].each { |i| number.insert(i, '-')}
   number
+end
+
+# So next assignment is to find out which hours of the most people have registered!
+# Assignment gives me some documentation about Date and Time classes so I'm going to read it first
+# For each row,
+# I will use Time.strptime(regdate, directives) to create a time object with date in csv file
+# I have to create a method for finding the peak hours
+# I will then use #hour method to get hour from Time object
+# I will store each hour as keys in hashes and increment their value if certain key appears
+# I will sort the hashes by using sorting method
+# I can use #sort_by on hash to sort the hours
+# Then I extract only the hours as strings
+# And store them in a file called peakhours.txt?
+
+def get_hour(time)
+  time = Time.strptime(time, '%m/%d/%y %H:%M')
+  time.hour.to_s
+end
+
+def store_peak_hours(hour_hash, hour)
+  hour_hash[hour] = 0 unless hour_hash[hour]
+  hour_hash[hour] += 1
+end
+
+def sort_hash(hash)
+  hash.sort_by {|k, v| -v}.to_h
+end
+
+def save_peak_hours(hash)
+  filename = "peak_hours.txt"
+
+  File.open(filename, 'w') do |file|
+    hash.each do |k, v|
+      file.puts "At hour #{k} of the day, #{v} person(s) registered."
+    end
+  end
 end
 
 def legislators_by_zipcode(zip)
@@ -71,15 +109,22 @@ contents = CSV.open(
 
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
+hour_hash = Hash.new
 
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
   zipcode = clean_zipcode(row[:zipcode])
   number = clean_phone_number(row[:homephone])
+  #binding.pry
+  hour = get_hour(row[:regdate])
   legislators = legislators_by_zipcode(zipcode)
+
+  store_peak_hours(hour_hash, hour)
 
   form_letter = erb_template.result(binding)
 
   save_thank_you_letter(id, form_letter)
 end
+
+save_peak_hours(sort_hash(hour_hash))
