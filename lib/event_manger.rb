@@ -3,7 +3,6 @@ require 'google/apis/civicinfo_v2'
 require 'erb'
 require 'time'
 require 'date'
-require 'pry-byebug'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
