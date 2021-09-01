@@ -1,0 +1,28 @@
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>Targets</title>
+</head>
+<body>
+  <h1>Hours of the day</h1>
+  <table>
+      <th>Hour</th><th>Number of Person(s)</th>
+        <% hour_hash.each do |hour, person| %>
+        <tr>
+          <td><%= "#{hour}" %></td>
+          <td><%= "#{person}" %></td>
+        </tr>
+        <% end %>
+  </table>
+  <h1>Days of the Week</h1>
+  <table>
+      <th>Day</th><th>Number of Person(s)</th>
+        <% day_hash.each do |day, person| %>
+        <tr>
+          <td><%= "#{day}" %></td>
+          <td><%= "#{person}" %></td>
+        </tr>
+        <% end %>
+  </table>
+</body>
+</html>
