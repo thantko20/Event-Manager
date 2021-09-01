@@ -3,7 +3,7 @@ require 'google/apis/civicinfo_v2'
 require 'erb'
 require 'time'
 require 'date'
-#require 'pry-byebug'
+require 'pry-byebug'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
@@ -134,7 +134,6 @@ contents.each do |row|
   name = row[:first_name]
   zipcode = clean_zipcode(row[:zipcode])
   number = clean_phone_number(row[:homephone])
-  #binding.pry
   hour = get_hour(row[:regdate])
   day = get_day(row[:regdate])
   legislators = legislators_by_zipcode(zipcode)
@@ -147,7 +146,7 @@ contents.each do |row|
   save_thank_you_letter(id, form_letter)
 end
 
-target = erb_target.result(binding)
 hour_hash = sort_hash(hour_hash)
 day_hash = sort_hash(day_hash)
+target = erb_target.result(binding)
 save_targets(target)
